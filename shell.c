@@ -1,6 +1,7 @@
 #include<stdio.h>
 
 void clearBuffer();
+void hola();
 
 int main(void)
 {
@@ -17,6 +18,8 @@ int b;
 
 	return 0;
 }
+
+
 
 void clearBuffer(void)
 {
