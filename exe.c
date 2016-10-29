@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <pthread.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -6,7 +7,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+
 char prompt[5]={":v \0"};
+char buf[1024]={'\0'};
 int salidatoarchivo=0;//servira para saber cuando desviar la salida estandar a un archivo
 void cambiaprompt1(int g)
 {
@@ -24,10 +27,6 @@ void cambiapromptOriginal(int g)
 {
 	strcpy(prompt,":v \0");
 }
-void muereproceso(int g)
-{
-	exit(-1);
-}
 void vaciarbuf(char* buf)
 {
 	int i=0;
@@ -36,12 +35,20 @@ void vaciarbuf(char* buf)
 		buf[i]='\0';
 	}
 }
+void *toarchivo(void* arg)
+{
+	int fichero;
+	fichero=open("registrobuf.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
+	write(fichero,buf,sizeof(buf));
+	write(fichero,"\n",2);
+	close(fichero);
+}
+
 int main()
 {
-	char buf[1024]={'\0'};
+	pthread_t mi_hilo;
 	char auxbuf[1023]={'\0'};
 	char *args[64];
-	int fichero;
 	printf("%d\n",getpid());
 	for (;;) 
 	{
@@ -66,11 +73,17 @@ int main()
 			scanf(" %[^\n]",auxbuf);
 			fflush(stdin);
 			strcat(buf,auxbuf);	
-
-			fichero=open("registrobuf.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
-			write(fichero,buf,sizeof(buf));
-			write(fichero,"\n",2);
-			close(fichero);
+			if(pthread_create(&mi_hilo,NULL,toarchivo,NULL))
+			{
+				printf("\n\t error al gardar en archivo:escritura");
+				abort();
+			}
+			if(pthread_join(mi_hilo,NULL))
+			{
+				printf("\n\t error al guardar en archivo:espera");
+				abort();
+			}
+			
 			/*
 			* dividir la cadena en argumentos.
 			*/
