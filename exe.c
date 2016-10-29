@@ -6,43 +6,79 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
-
+char prompt[5]={":v \0"};
 int salidatoarchivo=0;//servira para saber cuando desviar la salida estandar a un archivo
-
+void cambiaprompt1(int g)
+{
+	strcpy(prompt,"/_< \0");
+}
+void cambiaprompt2(int g)
+{
+	strcpy(prompt,":D \0");
+}
+void cambiaprompt3(int g)
+{
+	strcpy(prompt,"3:) \0");
+}
+void cambiapromptOriginal(int g)
+{
+	strcpy(prompt,":v \0");
+}
+void muereproceso(int g)
+{
+	exit(-1);
+}
+void vaciarbuf(char* buf)
+{
+	int i=0;
+	for(i=0;i<1024;i++)
+	{
+		buf[i]='\0';
+	}
+}
 int main()
 {
 	char buf[1024]={'\0'};
+	char auxbuf[1023]={'\0'};
 	char *args[64];
-	char *prompt={":v "};
 	int fichero;
-
+	printf("%d\n",getpid());
 	for (;;) 
 	{
 		/*
 		* Pide y lee un comando.
 		*/
+		vaciarbuf(buf);
+		signal(10,cambiaprompt1);
+		signal(12,cambiaprompt2);
+		signal(14,cambiaprompt3);
+		signal(16,cambiapromptOriginal);
 		printf(prompt);
-		scanf(" %[^\n]",buf);
-		if (buf=='\0') 
+		buf[0]=getchar();
+		buf[1]='\0';
+		if(buf[0]=='\n')
 		{
 			printf("\n");
-			close(fichero);
-			exit(0);
+			fflush(stdin);
+			continue;
 		}else
 		{
-		fichero=open("registrobuf.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
-		write(fichero,buf,sizeof(buf));
-		write(fichero,"\n",2);
-		close(fichero);
-		/*
-		* Dividir la cadena en argumentos.
-		*/
-		parse(buf, args);
+			scanf(" %[^\n]",auxbuf);
+			fflush(stdin);
+			strcat(buf,auxbuf);	
 
-		/*
-		* Ejecutar el comando.
-		*/
-		ejecutar(args);
+			fichero=open("registrobuf.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
+			write(fichero,buf,sizeof(buf));
+			write(fichero,"\n",2);
+			close(fichero);
+			/*
+			* dividir la cadena en argumentos.
+			*/
+			parse(buf, args);
+			/*
+			* Ejecutar el comando.
+			*/
+			ejecutar(args);
 		}
 	}
 }
@@ -127,6 +163,9 @@ ejecutar(char **args)
 	/*
 	* El padre ejecuta el wait.
 	*/
-	while (wait(&status) != pid)
+	if(pid!=0)
+	{
+		waitpid(pid,&status,'\0');
 		/* vacio */ ;
+	}
 }
