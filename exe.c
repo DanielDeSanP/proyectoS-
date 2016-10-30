@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <time.h>
 
 char prompt[5]={":v \0"};
 char buf[1024]={'\0'};
@@ -37,8 +38,16 @@ void vaciarbuf(char* buf)
 }
 void *toarchivo(void* arg)
 {
+	time_t tiempo;
+	char cad[80]={'\0'};
+	struct tm *tmptr;
+	tiempo=time(NULL);
+	tmptr=localtime(&tiempo);
+	strftime(cad,80,"%H:%M.%S, %A de %B de %Y",tmptr);
 	int fichero;
-	fichero=open("registrobuf.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
+	fichero=open("Historial.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
+	write(fichero,cad,sizeof(cad));
+	write(fichero,"  ",2);
 	write(fichero,buf,sizeof(buf));
 	write(fichero,"\n",2);
 	close(fichero);
