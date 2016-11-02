@@ -101,22 +101,22 @@ int main()
 			*/
                         
 			contadordeargumentos=divide(buf, args);
-                       
-                     
-                        for(int i=0;i<=contadordeargumentos;i++)// viendo si hay "mite"(tee)
-                        { 
-                           if(strcmp(args[i],"mite")==0){
-                               args2[0]=args[i+1];
-				ejecutarmite(args2);           //si existe, va a la funcion ejecutarmite
-            
-                                                        }  
-                        }
-               
-
+         
 			/*
 			* Ejecutar el comando.
 			*/
 		        ejecutar(args);
+			
+			// ejecutar tee 
+			
+			for(int i=0;i<=contadordeargumentos;i++)// viendo si hay "mite"(tee)
+                        { 
+                           if(strcmp(args[i],"mite")==0){
+                              args2[0]=args[i+1];
+			      ejecutarmite(args2);           //si existe, va a la funcion ejecutarmite
+            
+                                                        }  
+                        }
 		}
 	}
 }
@@ -161,6 +161,9 @@ int divide(char *buf, char **args)
 ejecutar(char **args)
 {
 	int pid, status;
+	
+	    if(strcmp(*args,"mite")==0)//si el argumento es "mite" regresa para que lo ejecute la funcion ejecutarmite
+	    return;
 
 	/*
 	* Obtener un proceso hijo.
