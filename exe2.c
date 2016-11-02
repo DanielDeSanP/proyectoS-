@@ -100,7 +100,7 @@ int main()
 			* dividir la cadena en argumentos.
 			*/
                         
-			contadordeargumentos=parse(buf, args);
+			contadordeargumentos=divide(buf, args);
                        
                      
                         for(int i=0;i<=contadordeargumentos;i++)// viendo si hay "mite"(tee)
