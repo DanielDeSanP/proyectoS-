@@ -106,7 +106,7 @@ int main()
                         for(int i=0;i<=contadordeargumentos;i++)// viendo si hay "mite"(tee)
                         { 
                            if(strcmp(args[i],"mite")==0){
-                               args4[0]=args[i+1];
+                               args2[0]=args[i+1];
 				ejecutarmite(args2);           //si existe, va a la funcion ejecutarmite
             
                                                         }  
