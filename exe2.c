@@ -63,7 +63,7 @@ int main()
 	char *args2[64];
 	char *comm[64];
 	fflush(stdin);
-	printf("%d\n",getpid());
+	printf("pid: %d\n",getpid());
 	for (;;) 
 	{
 		/*
@@ -103,53 +103,16 @@ int main()
 			*/
                         
 			contadordeargumentos=divide(buf, args);
-               
+
 		
 			/*
 			* Ejecutar el comando.
 			*/
-		        
-
-
-
-           		while (args[i] != NULL){
-
-
-			if(strcmp(args[i],"+")==0 && strcmp(args[i+1],"mite")==0 ){ // no queda :(
-                               args2[0]=args[i+2];
-				ejecutarpipe(args);
-				ejecutarmite(args2);
-					main();
-							 }
-
-
-
-			else if (strcmp(args[i],"+") == 0){  // compara caracter + para ejecutar pipe
-				ejecutarpipe(args);
-					main ();}
+		     
 		
-						
-
-                          else{
-		
-				ejecutar(args);
-			
-			     }
-
-                        					
-			
-
-
-
-
-			
-
-			i++;
-			}
-
-			
-          
-
+			ejecutar(args);
+				
+	
 
              
                         
@@ -157,6 +120,7 @@ int main()
 			
 		}
 	}
+				
 }
 
 /*
@@ -221,10 +185,12 @@ int ejecutar(char **args)
 	* El proceso hijo ejecuta el codigo dentro del if.
 	*/
 	if (pid == 0) 
-	{
+	{	
 		valor=execvp(*args, args);
+			
 		perror(*args);
-			return valor;
+			
+	
 		exit(1);
 
 	/* NOTA: las versiones execv() y execvp() de execl() son utiles cuando
@@ -244,68 +210,15 @@ int ejecutar(char **args)
 	* El padre ejecuta el wait.
 	*/
 	if(pid!=0)
-	{
-		waitpid(pid,&status,'\0');
-	
+	{	
+		
+		 waitpid(pid,&status,'\0'); ejecutarpipe(args);
+		
 		/* vacio */ ;
 	}
 }
 
 
-ejecutarmite(char **args)
-{
-	int pid, status;
-	FILE* archivo;
-	char buffer[512];
-	int pe[2],ps[2],numbyte;
-
-	/*
-	* Obtener un proceso hijo.
-	*/
-	if ( (pid = fork()) < 0 ) 
-	{
-		perror("fork");
-		exit(1);
-        }
-	/*
-	* El proceso hijo ejecuta el codigo dentro del if.
-	*/
-	if (pid == 0) 
-	{
-		       if((archivo=fopen(*args,"w"))!=NULL)
-		      {
-			pipe(pe);
-			pipe(ps);
-			dup2(0,pe[0]);//la entrada de la tuberia apunta a la entrada estandar
-			close(pe[1]);
-			dup2(1,ps[1]);//la salida de la tuberia apunta a la salida estandar
-			close(ps[0]);
-			while((numbyte=read(pe[0],buffer,512))>0)
-			{
-				fwrite(buffer,numbyte,1,archivo);
-				write(ps[1],buffer,numbyte);
-			}		
-		      }
-		  close(ps[1]);
-	          close(pe[0]);
-                  fclose(archivo);
-
-             
-		exit(1);
-
-
-	}
-        
-
-	if(pid!=0)
-	{
-	
-		waitpid(pid,&status,'\0');
-
-	
-		/* vacio */ ;
-	}
-}
 
 
 
@@ -443,15 +356,28 @@ ejecutarmite(char **args)
 			}
 		}
 				
-		waitpid(pid,NULL,0);
+		
 				
 		i++;	
-	}
+	} waitpid(pid,NULL,0); main();
 } 
 	
 
 
 	
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
