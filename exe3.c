@@ -135,7 +135,9 @@ int main()
 				if (args[aux] == NULL || args[aux+1] == NULL  )
 					printf("\n"); 
 				
-					else redireccion(args_aux,args[i+1],args[i+3],1); }
+				redireccion(args_aux,args[i+1],args[i+3],1);
+				main();
+				 }
 			i++;
 			}
 
@@ -412,19 +414,19 @@ int ejecutar(char **args)
 
 
 
-void redireccion(char * args[], char* inputFile, char* outputFile, int option){
+void redireccion(char * args[], char* inputFile, char* outputFile, int opcion){
 	 char cwd[1024];
 	int err = -1;
 		pid_t pid;
-	int salidatoarchivo=0; // between 0 and 19, describing the output or input file
+	int salidatoarchivo=0; 
 	
 	if((pid=fork())==-1){
 		printf("Error\n");
 		return;
 	}
 	if(pid==0){
-		// Option 0: redireccion de salida
-		if (option == 0){
+		// Opcion 0: redireccion de salida
+		if (opcion == 0){
 		
 			//abrimos archivo para escribir
 			salidatoarchivo = open(outputFile, O_CREAT | O_TRUNC | O_WRONLY, 0600); 
@@ -432,8 +434,8 @@ void redireccion(char * args[], char* inputFile, char* outputFile, int option){
 			//Remplazamos la salida estandar con el archivo
 			dup2(salidatoarchivo, STDOUT_FILENO); 
 			close(salidatoarchivo);
-		// Option 1: redireccion de entrada
-		}else if (option == 1){
+		// Opcion 1: redireccion de entrada
+		}else if (opcion == 1){
 			// Abrimos para escribir
 			salidatoarchivo = open(inputFile, O_RDONLY, 0600);  
 				//Remplazamos la entrada estandar con el archivo
@@ -444,7 +446,7 @@ void redireccion(char * args[], char* inputFile, char* outputFile, int option){
 			dup2(salidatoarchivo, STDOUT_FILENO);
 			close(salidatoarchivo);		 
 		}
-		else if (option == 2){
+		else if (opcion == 2){
 			// Abrimos para escribir
 			salidatoarchivo = open(inputFile, O_RDONLY, 0600);  
 				//Remplazamos la entrada estandar con el archivo
@@ -464,15 +466,6 @@ void redireccion(char * args[], char* inputFile, char* outputFile, int option){
 	}
 	waitpid(pid,NULL,0);
 }
-
-
-
-
-
-
-
-
-
 
 
 
