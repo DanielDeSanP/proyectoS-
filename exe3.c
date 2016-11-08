@@ -11,7 +11,7 @@
 #include <signal.h>
 
 
-char prompt[5]={":v_\0"};
+char prompt[5]={":v_\0"}; //prompt inicial
 char buf[1024]={'\0'};
 int salidatoarchivo=0;//servira para saber cuando desviar la salida estandar a un archivo
 
@@ -20,9 +20,9 @@ void limpiarstdin()
 	while(getchar() != '\n');
 }
 
-void cambiaprompt1(int g)
+void cambiaprompt1(int g)          //  ---------------------------------------------------
 {
-	strcpy(prompt,"/_< \0");
+	strcpy(prompt,"/_< \0");    //Funciones que nos daran diferentes caracteres para el prompt
 }
 void cambiaprompt2(int g)
 {
@@ -32,7 +32,7 @@ void cambiaprompt3(int g)
 {
 	strcpy(prompt,"3:) \0");
 }
-void cambiapromptOriginal(int g)
+void cambiapromptOriginal(int g) //----------------------------------------------------------------------
 {
 	strcpy(prompt,":v \0");
 }
@@ -50,11 +50,11 @@ void *toarchivo(void* arg)
 	char cad[80]={'\0'};
 	struct tm *tmptr;
 	tiempo=time(NULL);
-	tmptr=localtime(&tiempo);
+	tmptr=localtime(&tiempo); //obtenemos el tiempo local para despues usarlo en el archivo historial
 	strftime(cad,80,"%H:%M.%S, %A de %B de %Y",tmptr);
 	int fichero;
-	fichero=open("Historial.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
-	write(fichero,cad,sizeof(cad));
+	fichero=open("Historial.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP); // se abre archivo en donde se guardara el registro de
+	write(fichero,cad,sizeof(cad));                                                          //Todo lo que se escribe en pantalla
 	write(fichero,"  ",2);
 	write(fichero,buf,sizeof(buf));
 	write(fichero,"\n",2);
@@ -62,7 +62,7 @@ void *toarchivo(void* arg)
 }
 
 int main()
-{       int mite=0,contadordeargumentos=0,valor=1,comandos=0,i=0;
+{       int mite=0,contadordeargumentos=0,comandos=0,i=0;
 	int aux,j=0;
 	pthread_t mi_hilo;
 	char auxbuf[1023]={'\0'};
@@ -98,7 +98,7 @@ int main()
 			strcat(buf,auxbuf);	
 			if(pthread_create(&mi_hilo,NULL,toarchivo,NULL))
 			{
-				printf("\n\t error al gardar en archivo:escritura");
+				printf("\n\t error al guardar en archivo:escritura");
 				abort();
 			}
 			if(pthread_join(mi_hilo,NULL))
@@ -111,13 +111,13 @@ int main()
 			* dividir la cadena en argumentos.
 			*/
                         
-			contadordeargumentos=divide(buf, args);
+			contadordeargumentos=divide(buf, args);	//
 
 			
 				
 
-			while ( args[j] != NULL){
-			if ( (strcmp(args[j],">") == 0) || (strcmp(args[j],"<") == 0) ){
+			while ( args[j] != NULL){ //ciclo en donde se revisa si existe "<" o ">", de ser asi, salimos del ciclo
+			if ( (strcmp(args[j],">") == 0) || (strcmp(args[j],"<") == 0) ){ 
 				break;
 			}
 			args_aux[j] = args[j];
@@ -135,15 +135,15 @@ int main()
 					printf("\n");
 					
 				}
-				redireccion(args_aux,NULL,args[i+1],0);
+				redireccion(args_aux,NULL,args[i+1],0); //se ejecuta la funcion redireccion para ">"
 				main();
 			}
 			if (strcmp(args[i],"<") == 0){
 				aux = i+1;
-				if (args[aux] == NULL || args[aux+1] == NULL  )
+				if (args[aux] == NULL || args[aux+1] == NULL  ) // se revisa si hay argumentos suficientes
 					printf("\n"); 
 				
-				redireccion(args_aux,args[i+1],args[i+3],1);
+				redireccion(args_aux,args[i+1],args[i+3],1); //se ejecuta la funcion redireccion para "<"
 				main();
 				 }
 			i++;
@@ -467,7 +467,7 @@ void redireccion(char * args[], char* inputFile, char* outputFile, int opcion){
 		}
 		 
 
-		setenv("Padre",getcwd(cwd, 1024),1);
+		
 		if (execvp(args[0],args)==err){
 			printf("error");
 		}		 
