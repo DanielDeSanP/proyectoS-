@@ -14,6 +14,12 @@
 char prompt[5]={":v_\0"};
 char buf[1024]={'\0'};
 int salidatoarchivo=0;//servira para saber cuando desviar la salida estandar a un archivo
+
+void limpiarstdin()
+{
+	while(getchar() != '\n');
+}
+
 void cambiaprompt1(int g)
 {
 	strcpy(prompt,"/_< \0");
@@ -86,7 +92,9 @@ int main()
 		}else
 		{
 			scanf("%[^\n]",auxbuf);
-			fflush(stdin);
+			//fflush(stdin); <- Esta función es tramposa, luego no limpia bien el buffer, por eso 
+			//aparecía dos veces el prompt
+			limpiarstdin();
 			strcat(buf,auxbuf);	
 			if(pthread_create(&mi_hilo,NULL,toarchivo,NULL))
 			{
