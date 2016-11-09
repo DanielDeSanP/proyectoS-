@@ -11,12 +11,18 @@
 #include <signal.h>
 
 
-char prompt[5]={":v_\0"};
+char prompt[5]={":v_\0"}; //prompt inicial
 char buf[1024]={'\0'};
 int salidatoarchivo=0;//servira para saber cuando desviar la salida estandar a un archivo
-void cambiaprompt1(int g)
+
+void limpiarstdin()
 {
-	strcpy(prompt,"/_< \0");
+	while(getchar() != '\n');
+}
+
+void cambiaprompt1(int g)          //  ---------------------------------------------------
+{
+	strcpy(prompt,"/_< \0");    //Funciones que nos daran diferentes caracteres para el prompt
 }
 void cambiaprompt2(int g)
 {
@@ -26,7 +32,7 @@ void cambiaprompt3(int g)
 {
 	strcpy(prompt,"3:) \0");
 }
-void cambiapromptOriginal(int g)
+void cambiapromptOriginal(int g) //----------------------------------------------------------------------
 {
 	strcpy(prompt,":v \0");
 }
@@ -44,11 +50,11 @@ void *toarchivo(void* arg)
 	char cad[80]={'\0'};
 	struct tm *tmptr;
 	tiempo=time(NULL);
-	tmptr=localtime(&tiempo);
+	tmptr=localtime(&tiempo); //obtenemos el tiempo local para despues usarlo en el archivo historial
 	strftime(cad,80,"%H:%M.%S, %A de %B de %Y",tmptr);
 	int fichero;
-	fichero=open("Historial.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
-	write(fichero,cad,sizeof(cad));
+	fichero=open("Historial.txt",O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP); // se abre archivo en donde se guardara el registro de
+	write(fichero,cad,sizeof(cad));                                                          //Todo lo que se escribe en pantalla
 	write(fichero,"  ",2);
 	write(fichero,buf,sizeof(buf));
 	write(fichero,"\n",2);
@@ -56,12 +62,13 @@ void *toarchivo(void* arg)
 }
 
 int main()
-{       int mite=0,contadordeargumentos=0,valor=1,comandos=0,i=0;
+{       int mite=0,contadordeargumentos=0,comandos=0,i=0;
+	int aux,j=0;
 	pthread_t mi_hilo;
 	char auxbuf[1023]={'\0'};
 	char *args[64];
 	char *args2[64];
-	char *comm[64];
+	char *args_aux[256];
 	fflush(stdin);
 	printf("pid: %d\n",getpid());
 	for (;;) 
@@ -70,7 +77,7 @@ int main()
 		* Pide y lee un comando.
 		*/
 		vaciarbuf(buf);
-		signal(10,cambiaprompt1);
+		signal(10,cambiaprompt1);	//señales para cambiar el prompt
 		signal(12,cambiaprompt2);
 		signal(14,cambiaprompt3);
 		signal(16,cambiapromptOriginal);
@@ -85,11 +92,13 @@ int main()
 		}else
 		{
 			scanf("%[^\n]",auxbuf);
-			fflush(stdin);
+			//fflush(stdin); <- Esta función es tramposa, luego no limpia bien el buffer, por eso 
+			//aparecía dos veces el prompt
+			limpiarstdin();
 			strcat(buf,auxbuf);	
 			if(pthread_create(&mi_hilo,NULL,toarchivo,NULL))
 			{
-				printf("\n\t error al gardar en archivo:escritura");
+				printf("\n\t error al guardar en archivo:escritura");
 				abort();
 			}
 			if(pthread_join(mi_hilo,NULL))
@@ -102,17 +111,64 @@ int main()
 			* dividir la cadena en argumentos.
 			*/
                         
-			contadordeargumentos=divide(buf, args);
+			contadordeargumentos=divide(buf, args);	//
 
+			
+				
+
+			while ( args[j] != NULL){ //ciclo en donde se revisa si existe "<" o ">", de ser asi, salimos del ciclo
+			if ( (strcmp(args[j],">") == 0) || (strcmp(args[j],"<") == 0) || (strcmp(args[j],"2>") == 0) ){ 
+				break;
+			}
+			args_aux[j] = args[j];
+			j++;
+			}
+
+
+
+			while (args[i] != NULL )
+			{
+
+			//Si '>' es detectado, tenemos redirección de salida.		
+			if (strcmp(args[i],">") == 0){
+				if (args[i+1] == NULL){
+					
+				}
+				redireccion(args_aux,NULL,args[i+1],0);{ } //se ejecuta la funcion redireccion para ">"
+				main();
+			}
+
+				//Si '<' es detectado, tenemos redirección de entrada.		
+			if (strcmp(args[i],"<") == 0){
+				aux = i+1;
+				if (args[aux] == NULL || args[aux+1] == NULL  ){ }// se revisa si hay argumentos suficientes
+				
+				redireccion(args_aux,args_aux,args[i+1],1); //se ejecuta la funcion redireccion para "<"
+				main();
+				 }
+
+				//Si '<' es detectado, tenemos redirección de error
+			if (strcmp(args[i],"2>") == 0){
+				aux = i+1;
+				if (args[aux] == NULL || args[aux+1] == NULL  ) { }// se revisa si hay argumentos suficientes
+				redireccion(args_aux,NULL,args[i+1],2); //se ejecuta la funcion redireccion para "2>"
+				main();
+				 }
+
+
+			i++;
+
+
+			}//while
+
+
+			
 		
 			/*
-			* Ejecutar el comando.
+			* Funcion que Ejecuta el comando
 			*/
-		     
-		
-			ejecutar(args);
-				
-	
+		  
+			 ejecutar(args);
 
              
                         
@@ -173,12 +229,11 @@ int ejecutar(char **args)
 	if ( (pid = fork()) < 0 ) 
 	{
 		perror("fork");
-		exit(1);
+		printf("Proceso hijo no pudo ser creado\n");
+		return;
+		
 
-		/* NOTA: perror() genera un mensaje de error breve en la 
-		* salida de errores describiendo el ultimo error encontrado
-		* durante una llamada al sistema o funcion de la biblioteca.
-		*/
+	
 	}
 
 	/*
@@ -188,20 +243,16 @@ int ejecutar(char **args)
 	{	
 		valor=execvp(*args, args);
 			
-		perror(*args);
-			
+		
+		 	
 	
 		exit(1);
 
-	/* NOTA: las versiones execv() y execvp() de execl() son utiles cuando
+	/*  las versiones execv() y execvp() de execl() son utiles cuando
 	   el numero de argumentos es desconocido previamente.
 		Los argumentos para execv() y execvp() son el nombre del archivo que
 		sera ejecutado y un vector de cadenas que contienen los argumentos.
-		El ultimo argumento de cadema debera ser un apuntador a 0 (NULL)
-		execlp() y execvp() son llamados con los mismos argumentos que 
-		execl() y execv(), pero duplican las acciones del shell en
-		la busqueda de un archivo ejecutable en un lista de directorios.
-		La lista de directorios es obtenida del ambiente.
+	
 	*/
 
 	}
@@ -222,13 +273,13 @@ int ejecutar(char **args)
 
 
 
- void ejecutarpipe(char * args[]){
-	// File descriptors
-	int filedes[2]; // pos. 0 output, pos. 1 input of the pipe
+  ejecutarpipe(char * args[]){
+	// Descriptores de archivos
+	int filedes[2]; 
 	int filedes2[2];
 	
 	int num_cmds = 0;
-	
+	int status;
 	char *command[256];
 	
 	pid_t pid;
@@ -236,14 +287,14 @@ int ejecutar(char **args)
 	int err = -1;
 	int end = 0;
 	
-	// Variables used for the different loops
+	// Variables para diferentes loops
 	int i = 0;
 	int j = 0;
 	int k = 0;
 	int l = 0;
 	
-	// First we calculate the number of commands (they are separated
-	// by '|')
+	//calculamos el numero de comandos separados por un '+'
+	
 	while (args[l] != NULL){
 		if (strcmp(args[l],"+") == 0){
 			num_cmds++;
@@ -252,91 +303,104 @@ int ejecutar(char **args)
 	}
 	num_cmds++;
 	
-	// Main loop of this method. For each command between '|', the
-	// pipes will be configured and standard input and/or output will
-	// be replaced. Then it will be executed
+	// 
+	//Bucle principal, por cada comando entre '+' los pipes seran configurados y los I/O estandar seran
+	//remplazados
 	while (args[j] != NULL && end != 1){
 		k = 0;
-		// We use an auxiliary array of pointers to store the command
-		// that will be executed on each iteration
+
+
+		//Usamos un arrreglo auxiliar para guardar los comandos que seran ejecutados en cada iteracion
 		while (strcmp(args[j],"+") != 0){
 			command[k] = args[j];
 			j++;	
 			if (args[j] == NULL){
-				// 'end' variable used to keep the program from entering
-				// again in the loop when no more arguments are found
+		
+				//con 'end' nos aseguramos de que se termine el bucle cuando no hay mas argumentos
+				
 				end = 1;
 				k++;
 				break;
 			}
 			k++;
 		}
-		// Last position of the command will be NULL to indicate that
-		// it is its end when we pass it to the exec function
+		
 		command[k] = NULL;
 		j++;		
 		
-		// Depending on whether we are in an iteration or another, we
-		// will set different descriptors for the pipes inputs and
-		// output. This way, a pipe will be shared between each two
-		// iterations, enabling us to connect the inputs and outputs of
-		// the two different commands.
+
+
+		//Dependiendo de si estamos en una iteración u otra,
+		//Estableceremos diferentes descriptores para las entradas y
+		//salida de los pipes. De esta manera, un pipe será compartido entre cada dos
+		//Iteraciones, lo que nos permite conectar las entradas y salidas de
+		//Los dos comandos diferentes.
+
+
+
 		if (i % 2 != 0){
-			pipe(filedes); // for odd i
+			pipe(filedes); // para i impar
 		}else{
-			pipe(filedes2); // for even i
+			pipe(filedes2); // para i par
 		}
 		
 		pid=fork();
 		
-		if(pid==-1){			
+		if(pid<0){			
 			if (i != num_cmds - 1){
 				if (i % 2 != 0){
-					close(filedes[1]); // for odd i
+					close(filedes[1]); // para i impar
 				}else{
-					close(filedes2[1]); // for even i
+					close(filedes2[1]); // para i par
 				} 
 			}			
-			printf("Child process could not be created\n");
+			printf("Proceso hijo no pudo ser creado\n");
 			return;
 		}
 		if(pid==0){
-			// If we are in the first command
+			// Si estamos en el primer comando
 			if (i == 0){
 				dup2(filedes2[1], STDOUT_FILENO);
 			}
-			// If we are in the last command, depending on whether it
-			// is placed in an odd or even position, we will replace
-			// the standard input for one pipe or another. The standard
-			// output will be untouched because we want to see the 
-			// output in the terminal
+			
+
+			//Si estamos en el último comando, dependiendo de si
+			//esta en una posición impar o par, vamos a reemplazar
+			//La entrada estándar para una tubería u otra. 
+			//La salida Estandar estara intacta porque queremos ver la
+			//Salida en la terminal
+
+
 			else if (i == num_cmds - 1){
-				if (num_cmds % 2 != 0){ // for odd number of commands
+				if (num_cmds % 2 != 0){  //para numero de comando impar
 					dup2(filedes[0],STDIN_FILENO);
-				}else{ // for even number of commands
+				}else{ // para numero de comando par
 					dup2(filedes2[0],STDIN_FILENO);
 				}
-			// If we are in a command that is in the middle, we will
-			// have to use two pipes, one for input and another for
-			// output. The position is also important in order to choose
-			// which file descriptor corresponds to each input/output
-			}else{ // for odd i
+	 
+
+			//Si estamos en un comando que esta en medio,
+			//Usaremos Dos tuberías, una para entrada y otra para
+			//salida. La posición también es importante para elegir
+			//Cuyo descriptor de archivo corresponde a cada entrada / salida
+			}else{ // Para i impar
 				if (i % 2 != 0){
 					dup2(filedes2[0],STDIN_FILENO); 
 					dup2(filedes[1],STDOUT_FILENO);
-				}else{ // for even i
+				}else{ // para i par
 					dup2(filedes[0],STDIN_FILENO); 
 					dup2(filedes2[1],STDOUT_FILENO);					
 				} 
 			}
 			
 			if (execvp(command[0],command)==err){
-				kill(getpid(),SIGTERM);
+					perror(*args);
+					exit(1);
 		
 			}		
 		}
 				
-		// CLOSING DESCRIPTORS ON PARENT
+		// Cerrando los descriptores en el proceso padre
 		if (i == 0){
 			close(filedes2[1]);
 		}
@@ -359,7 +423,7 @@ int ejecutar(char **args)
 		
 				
 		i++;	
-	} waitpid(pid,NULL,0); main();
+	} waitpid(pid,&status,'\0'); main();
 } 
 	
 
@@ -369,31 +433,62 @@ int ejecutar(char **args)
 
 
 
+int redireccion(char * args[], char* inputFile, char* outputFile, int opcion){
+	char cwd[1024];
+	int fd1,fd2,i=0;
+	char buffer[1024];
+  	int numbytes;
+	int err = -1;
+	pid_t pid;
+	int salidatoarchivo=0; 
+	
+	if((pid=fork())==-1){
+		printf("Error\n");
+		return;
+	}
+	if(pid==0){
+		// Opcion 0: redireccion de salida
+		if (opcion == 0){
+		
+			//abrimos archivo para escribir
+			salidatoarchivo = open(outputFile, O_CREAT | O_TRUNC | O_WRONLY, 0600); 
+			
+			//Remplazamos la salida estandar con el archivo
+			dup2(salidatoarchivo, STDOUT_FILENO); 
+			close(salidatoarchivo);
+		// Opcion 1: redireccion de entrada
+		}else if (opcion == 1){
+			
+			 
+ 		
+			// Abrimos para escribir
+			salidatoarchivo = open(outputFile, O_RDONLY, 0600);  
+				//Remplazamos la entrada estandar con el archivo
+			dup2(salidatoarchivo, STDIN_FILENO);
+			close(salidatoarchivo);
+			// remplazamos la salida con el archivo
+			 
+		
 
+		}
+		else if (opcion == 2){
+			
+			//abrimos archivo para escribir
+			salidatoarchivo = open(outputFile, O_CREAT | O_TRUNC | O_WRONLY, 0600); 
+			i++;
+			//Remplazamos la salida estandar con la salida de error estandar
+			dup2(salidatoarchivo,STDERR_FILENO); 
+			close(salidatoarchivo);	 
+		}
+		 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		
+		if (execvp(args[0],args)==err){
+			printf("error");
+		}		 
+	}
+	waitpid(pid,NULL,0);
+}
 
 
 
